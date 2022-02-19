@@ -24,4 +24,4 @@ Application will reply the a `pong` response
 
 ## To Run Application in Kubernetes
 
-- kubectl apply -f /kubernetes/base/yaml/pingpoing
+- kubectl apply -f /kubernetes/base/yaml/pingpong
