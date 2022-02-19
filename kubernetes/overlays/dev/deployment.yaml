@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pingpong
+spec:
+  template:
+    spec:
+      initContainers:  # this init container download init.sql file using "curl -o <downloaded file name with path> <download url>" command.
+        - name: javaagent
+          image: appropriate/curl
+          args:
+            - "L"
+            - "-o"
+            - "/tmp/data/splunk-otel-javaagent.jar" # we are saving downloaded file as init.sql in /tmp/data directory
+            - "https://github.com/signalfx/splunk-otel-java/releases/latest/download/splunk-otel-javaagent.jar" # download url
+          volumeMounts:
+          - name: javaagent # mount the volume where downloaded file will be saved
+            mountPath: /tmp/data
+      containers:
+        - name: pingpong
+          env:
+            - name: SPLUNK_OTEL_AGENT
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://$(SPLUNK_OTEL_AGENT):4317"
+            - name: OTEL_SERVICE_NAME
+              value: "splunk-auto-javaagent"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment=dev"
+            - name: JAVA_TOOL_OPTIONS
+              value: -javaagent:/tmp/data/splunk-otel-javaagent.jar
+          volumeMounts:
+          - name: javaagent # mount the volume where downloaded file will be saved
+            mountPath: /tmp/data       
+      volumes:
+        - name: javaagent
+          emptyDir: {}

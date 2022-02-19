@@ -1,0 +1,56 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: pingpong 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pingpong
+  template:
+    metadata:
+      labels:
+        app: pingpong 
+    spec:
+      initContainers:  # this init container download init.sql file using "curl -o <downloaded file name with path> <download url>" command.
+        - name: javaagent
+          image: appropriate/curl
+          args:
+            - "-L"
+            - "-o"
+            - "/tmp/data/splunk-otel-javaagent.jar" # we are saving downloaded file as init.sql in /tmp/data directory
+            - "https://github.com/signalfx/splunk-otel-java/releases/latest/download/splunk-otel-javaagent.jar" # download url
+          volumeMounts:
+          - name: javaagent # mount the volume where downloaded file will be saved
+            mountPath: /tmp/data
+        # - name: busybox
+        #   image: busybox
+        #   command: ["/bin/chmod","-R","777", "/tmp/data"]
+        #   volumeMounts:
+        #   - name: javaagent # mount the volume where downloaded file will be saved
+        #     mountPath: /tmp/data
+      containers:
+        - name: pingpong 
+          image: melcheng/ping-pong
+          volumeMounts:
+          - name: javaagent # mount the volume where downloaded file will be saved
+            mountPath: /tmp/data
+          env:
+            - name: SPLUNK_OTEL_AGENT
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://$(SPLUNK_OTEL_AGENT):4317"
+            - name: OTEL_SERVICE_NAME
+              value: "splunk-auto-javaagent"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment=dev"
+            - name: JAVA_TOOL_OPTIONS
+              #value: ""
+              value: -javaagent:/tmp/data/splunk-otel-javaagent.jar
+          ports:
+          - containerPort: 8080
+      volumes:
+        - name: javaagent
+          emptyDir: {}
