@@ -16,6 +16,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
+		<logger.version>0.3.3</logger.version>
 	</properties>
 
 	<dependencies>
@@ -34,6 +35,12 @@
 					<artifactId>junit-vintage-engine</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.fluentd</groupId>
+			<artifactId>fluent-logger</artifactId>
+			<version>${logger.version}</version>
 		</dependency>
 	</dependencies>
 
