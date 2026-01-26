@@ -184,7 +184,7 @@ pipeline {
           container('kubectl') {
              sh '''
                echo "Retreive lastest image tag:"
-               sed -i "s|image: melcheng/ping-pong:.*|image: ${DOCKER_HUB_REPO}:${BUILD_NUMBER}|g" k8s/deployment.yaml
+               sed -i "s|image: melcheng/ping-pong:.*|image: ${DOCKER_HUB_REPO}:${BUILD_NUMBER}|g" k8s/yaml/pingpong/deployment.yaml
 
                echo "Test deployment apply..."
                kubectl apply -f k8s/deployment.yaml

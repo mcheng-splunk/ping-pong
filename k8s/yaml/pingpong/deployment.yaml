@@ -2,6 +2,7 @@ apiVersion : apps/v1
 kind: Deployment
 metadata:
   name: pingpong 
+  namespace: development 
 spec:
   replicas: 1
   selector:
@@ -23,12 +24,7 @@ spec:
           volumeMounts:
           - name: javaagent # mount the volume where downloaded file will be saved
             mountPath: /tmp/data
-        # - name: busybox
-        #   image: busybox
-        #   command: ["/bin/chmod","-R","777", "/tmp/data"]
-        #   volumeMounts:
-        #   - name: javaagent # mount the volume where downloaded file will be saved
-        #     mountPath: /tmp/data
+
       containers:
         - name: pingpong 
           image: melcheng/ping-pong
