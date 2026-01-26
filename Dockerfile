@@ -1,5 +1,5 @@
 # Stage 1: Build the app with Maven
-FROM maven:3.5.2-jdk-8-alpinee AS maven_build
+FROM maven:3.8.7-openjdk-18-slim AS maven_build
 
 # Set working directory
 WORKDIR /build
