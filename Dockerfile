@@ -1,16 +1,31 @@
-FROM maven:3.5.2-jdk-8-alpine AS MAVEN_BUILD
+# Stage 1: Build the app with Maven
+FROM maven:3.5.2-jdk-8-alpinee AS maven_build
 
-COPY pom.xml /build/
-COPY src /build/src/
+# Set working directory
+WORKDIR /build
 
-WORKDIR /build/
-RUN mvn package
+# Copy pom.xml first for dependency caching
+COPY pom.xml .
 
-FROM openjdk:8-jre-alpine
+# Download dependencies
+RUN mvn dependency:go-offline
+
+# Copy the source code
+COPY src ./src
+
+# Build the application
+RUN mvn clean package -DskipTests
+
+# Stage 2: Create a lightweight runtime image
+FROM eclipse-temurin:8-jdk-ubi10-minimal
 
 WORKDIR /app
 
-COPY --from=MAVEN_BUILD /build/target/ping-pong-0.0.1-SNAPSHOT.jar /app/
+# Copy the built JAR from the Maven build
+COPY --from=maven_build /build/target/ping-pong-0.0.1-SNAPSHOT.jar /app/
 
-ENTRYPOINT ["java", "-jar", "ping-pong-0.0.1-SNAPSHOT.jar"]
+# Expose default Spring Boot port
 EXPOSE 8080
+
+# Entry point
+ENTRYPOINT ["java", "-jar", "ping-pong-0.0.1-SNAPSHOT.jar"]
