@@ -220,7 +220,7 @@ pipeline {
                       "node_name": "${NODE_NAME}",
                       "job_duration": ${duration},
                       "build_number": ${BUILD_NUMBER},
-                      "build_url": "${BUILD_URL}"
+                      "build_url": "${BUILD_URL}",
                       "build_status": "${buildStatus}"
                   }
                 }"""
