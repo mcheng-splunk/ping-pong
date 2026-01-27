@@ -62,7 +62,7 @@ pipeline {
       }
       stage('SonarQube'){
         steps {
-	  container('maven') {
+	        container('maven') {
             withSonarQubeEnv(
               installationName: 'SonarQube', 
               credentialsId: 'sonarqube-integration'
@@ -103,96 +103,113 @@ pipeline {
           }
         }
       }
-    stage('Trivy Scan') {
-      steps {
-        // Step 1: Run Trivy scan in trivy container
-        container('trivy') {
-            script {
-                def trivyReportFile = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.json"
-                def htmlReport = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.html"
-                def templateFile = "${WORKSPACE}/html.tpl"
+      stage('Trivy Scan') {
+        steps {
+          // Step 1: Run Trivy scan in trivy container
+          container('trivy') {
+              script {
+                  def trivyReportFile = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.json"
+                  def htmlReport = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.html"
+                  def templateFile = "${WORKSPACE}/html.tpl"
 
-                echo "Scanning Docker image ${DOCKER_HUB_REPO}:${BUILD_NUMBER}..."
-                sh """
-                    # Run scan once (JSON)
-                    trivy image --format json --output ${trivyReportFile} ${DOCKER_HUB_REPO}:${BUILD_NUMBER}
+                  echo "Scanning Docker image ${DOCKER_HUB_REPO}:${BUILD_NUMBER}..."
+                  sh """
+                      # Run scan once (JSON)
+                      trivy image --format json --output ${trivyReportFile} ${DOCKER_HUB_REPO}:${BUILD_NUMBER}
 
-                    # Convert JSON to HTML (no rescan)
-                    trivy convert \
-                      --format template \
-                      --template "@${WORKSPACE}/trivy/html.tpl"  \
-                      --output ${htmlReport} \
-                      ${trivyReportFile}
-                """
+                      # Convert JSON to HTML (no rescan)
+                      trivy convert \
+                        --format template \
+                        --template "@${WORKSPACE}/trivy/html.tpl"  \
+                        --output ${htmlReport} \
+                        ${trivyReportFile}
+                  """
 
-                echo "HTML report generated: ${htmlReport}"
+                  echo "HTML report generated: ${htmlReport}"
 
-                // Archive only HTML for Jenkins UI download
-                archiveArtifacts artifacts: "trivy_report_${JOB_NAME}_${BUILD_NUMBER}.html", fingerprint: true
-            }
-        } // end of trivy container
+                  // Archive only HTML for Jenkins UI download
+                  archiveArtifacts artifacts: "trivy_report_${JOB_NAME}_${BUILD_NUMBER}.html", fingerprint: true
+              }
+          } // end of trivy container
 
-        // Step 2: Combine metadata and send to Splunk in a curl-capable container
-        container('maven') {
-            script {
-                def trivyReportFile = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.json"
-                def combinedFile = "${WORKSPACE}/trivy_combined_${JOB_NAME}_${BUILD_NUMBER}.json"
+          // Step 2: Combine metadata and send to Splunk in a curl-capable container
+          container('maven') {
+              script {
+                  def trivyReportFile = "${WORKSPACE}/trivy_report_${JOB_NAME}_${BUILD_NUMBER}.json"
+                  def combinedFile = "${WORKSPACE}/trivy_combined_${JOB_NAME}_${BUILD_NUMBER}.json"
 
-                // Read Trivy JSON
-                def trivyData = readJSON file: trivyReportFile
+                  // Read Trivy JSON
+                  def trivyData = readJSON file: trivyReportFile
 
-                // Combine metadata with Trivy report
-                def combinedMap = [
-                    index: "jenkins_statistics",
-                    sourcetype: "json:jenkins",
-                    host: "jenkins",
-                    source: "jenkins",
-                    event: [
-                        event_tag: "job_scan",
-                        job_name: "${JOB_NAME}",
-                        node_name: "${NODE_NAME}",
-                        build_number: BUILD_NUMBER,
-                        build_url: "${BUILD_URL}",
-                        trivy_report: trivyData
-                    ]
-                ]
+                  // Combine metadata with Trivy report
+                  def combinedMap = [
+                      index: "jenkins_statistics",
+                      sourcetype: "json:jenkins",
+                      host: "jenkins",
+                      source: "jenkins",
+                      event: [
+                          event_tag: "job_scan",
+                          job_name: "${JOB_NAME}",
+                          node_name: "${NODE_NAME}",
+                          build_number: BUILD_NUMBER,
+                          build_url: "${BUILD_URL}",
+                          trivy_report: trivyData
+                      ]
+                  ]
 
-                // Write combined JSON
-                def combinedJson = groovy.json.JsonOutput.toJson(combinedMap)
-                writeFile file: combinedFile, text: combinedJson
+                  // Write combined JSON
+                  def combinedJson = groovy.json.JsonOutput.toJson(combinedMap)
+                  writeFile file: combinedFile, text: combinedJson
 
-                echo "Sending Trivy report to Splunk..."
-                withCredentials([
-                    string(credentialsId: 'splunk-hec-token', variable: 'HEC_TOKEN'),
-                    string(credentialsId: 'splunk-hec-url', variable: 'SPLUNK_HEC_URL')
-                ]) {
-                    sh """
-                        curl -k -s \$SPLUNK_HEC_URL \
-                            -H "Authorization: Splunk \$HEC_TOKEN" \
-                            -H "Content-Type: application/json" \
-                            -d @${combinedFile} || true
-                    """
-                }
-            }
-        } // end of maven container
+                  echo "Sending Trivy report to Splunk..."
+                  withCredentials([
+                      string(credentialsId: 'splunk-hec-token', variable: 'HEC_TOKEN'),
+                      string(credentialsId: 'splunk-hec-url', variable: 'SPLUNK_HEC_URL')
+                  ]) {
+                      sh """
+                          curl -k -s \$SPLUNK_HEC_URL \
+                              -H "Authorization: Splunk \$HEC_TOKEN" \
+                              -H "Content-Type: application/json" \
+                              -d @${combinedFile} || true
+                      """
+                  }
+              }
+          } // end of maven container
+        }
       }
-    }
 
+
+      // stage('Deploy to Kubernetes') {
+      //   steps {
+      //     container('kubectl') {
+      //        sh '''
+      //          echo "Retreive lastest image tag:"
+      //          sed -i "s|image: melcheng/ping-pong:.*|image: ${DOCKER_HUB_REPO}:${BUILD_NUMBER}|g" k8s/yaml/pingpong/deployment.yaml
+
+      //          echo "Test deployment apply..."
+      //          kubectl apply -f k8s/yaml/pingpong/deployment.yaml
+      //        '''
+      //     }
+      //   }
+      // }
 
       stage('Deploy to Kubernetes') {
         steps {
           container('kubectl') {
-             sh '''
-               echo "Retreive lastest image tag:"
-               sed -i "s|image: melcheng/ping-pong:.*|image: ${DOCKER_HUB_REPO}:${BUILD_NUMBER}|g" k8s/yaml/pingpong/deployment.yaml
+            script {
+                // Set the image variable dynamically
+                env.PINGPONG_IMAGE = "${DOCKER_HUB_REPO}:${BUILD_NUMBER}"
 
-               echo "Test deployment apply..."
-               kubectl apply -f k8s/yaml/pingpong/deployment.yaml
-             '''
+                // Use envsubst to replace ${PINGPONG_IMAGE} in the deployment YAML
+                sh '''
+                envsubst < k8s/yaml/pingpong/deployment.yaml | kubectl apply -f -
+                '''
+            }
           }
-        }
-      }
-    }
+        }   
+      } // end of Kubernetes Deploy stage
+    } // end of stages
+
     post {
       always {
         withCredentials([
