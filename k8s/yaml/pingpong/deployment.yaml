@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: pingpong 
-          image: image: "${PINGPONG_IMAGE}"  # placeholder for dynamic image
+          image: "${PINGPONG_IMAGE}"  # placeholder for dynamic image
           volumeMounts:
           - name: javaagent # mount the volume where downloaded file will be saved
             mountPath: /tmp/data
