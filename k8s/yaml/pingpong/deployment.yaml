@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: pingpong 
-          image: image: ${PINGPONG_IMAGE}   # placeholder for dynamic image
+          image: image: "${PINGPONG_IMAGE}"  # placeholder for dynamic image
           volumeMounts:
           - name: javaagent # mount the volume where downloaded file will be saved
             mountPath: /tmp/data
@@ -44,7 +44,7 @@ spec:
               value: "deployment.environment=dev"
             - name: JAVA_TOOL_OPTIONS
               #value: ""
-              value: -javaagent:/tmp/data/splunk-otel-javaagent.jar
+              value: "-javaagent:/tmp/data/splunk-otel-javaagent.jar"
           ports:
           - containerPort: 8080
       volumes:

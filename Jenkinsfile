@@ -202,7 +202,8 @@ pipeline {
 
                 // Use envsubst to replace ${PINGPONG_IMAGE} in the deployment YAML
                 sh '''
-                envsubst < k8s/yaml/pingpong/deployment.yaml | kubectl apply -f -
+                envsubst < k8s/yaml/pingpong/deployment.yaml > deployment_temp.yaml
+                kubectl apply -f deployment_temp.yaml
                 '''
             }
           }
