@@ -46,7 +46,8 @@ spec:
               value: "deployment.environment=dev"
             - name: JAVA_TOOL_OPTIONS
               #value: ""
-              value: "-javaagent:/tmp/data/splunk-otel-javaagent.jar"
+              #value: "-javaagent:/tmp/data/splunk-otel-javaagent.jar"
+              value: "-javaagent:/tmp/data/splunk-otel-javaagent.jar -Dotel.instrumentation.common.mdc.resource-attributes=service.name,deployment.environment"
           ports:
           - containerPort: 8080
       volumes:
