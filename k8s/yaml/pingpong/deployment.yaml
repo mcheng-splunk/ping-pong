@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: pingpong 
+      annotations:
+        splunk.com/sourcetype: springboot:json
     spec:
       initContainers:  # this init container download init.sql file using "curl -o <downloaded file name with path> <download url>" command.
         - name: javaagent
