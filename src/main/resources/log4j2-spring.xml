@@ -6,7 +6,7 @@
         <Property name="appName">${spring:spring.application.name:-ping-pong}</Property>
         <Property name="environment">${spring:app.env:-dev}</Property>
         <Property name="language">${spring:app.language:-java}</Property>
-        <Property name="sourcetype">${spring:app.sourcetype:-springboot:json}</Property>
+        <!--<Property name="sourcetype">${spring:app.sourcetype:-springboot:json}</Property>-->
     </Properties>
 
     <Appenders>
@@ -17,7 +17,7 @@
                 <KeyValuePair key="application" value="${appName}"/>
                 <KeyValuePair key="environment" value="${environment}"/>
                 <KeyValuePair key="language" value="${language}"/>
-                <KeyValuePair key="sourcetype" value="${sourcetype}"/>
+                <!--<KeyValuePair key="sourcetype" value="${sourcetype}"/>-->
 
                 <!-- Splunk / OpenTelemetry correlation (optional) -->
                 <KeyValuePair key="trace_id" value="${ctx:trace_id}"/>
