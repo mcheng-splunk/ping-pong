@@ -26,9 +26,9 @@
                 <KeyValuePair key="trace_sampled" value="${ctx:trace_flags}"/>
 
                 <!-- Common useful fields -->
-                <KeyValuePair key="thread" value="%t"/>
-                <KeyValuePair key="logger" value="%c"/>
-                <KeyValuePair key="level" value="%p"/>
+                <KeyValuePair key="thread" value="${threadName}"/>
+                <KeyValuePair key="logger" value="${logger}"/>
+                <KeyValuePair key="level" value="${level}"/>
 
             </JsonLayout>
         </Console>
